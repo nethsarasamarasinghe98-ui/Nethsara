@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RUHUNU PRODUCTS - Billing Software</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        green: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            200: '#bbf7d0',
+                            300: '#86efac',
+                            400: '#4ade80',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-100 font-sans antialiased">
+    <div id="app" v-cloak>
+        
+        <!-- LOGIN PAGE -->
+        <div v-if="!isLoggedIn" class="login-bg w-full h-screen flex items-center justify-center px-4 relative overflow-hidden">
+            <div class="blob blob-1"></div>
+            <div class="blob blob-2"></div>
+            <div class="blob blob-3"></div>
+            <div class="glass-card login-card p-8 rounded-2xl w-full max-w-sm relative z-10">
+                <div class="text-center mb-8 stagger-1">
+                    <div class="logo-orb mx-auto mb-4">
+                        <i class="fa-solid fa-seedling text-3xl text-white"></i>
+                    </div>
+                    <h1 class="text-xl font-extrabold text-white uppercase tracking-[0.25em]">RUHUNU PRODUCTS</h1>
+                    <p class="text-green-200/70 mt-2 text-sm">Welcome back! Sign in to continue</p>
+                </div>
+                <form @submit.prevent="login" class="space-y-5">
+                    <div class="stagger-2">
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-green-100/70 mb-1.5">Username</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-user absolute left-3.5 top-1/2 -translate-y-1/2 text-green-300/60 text-sm"></i>
+                            <input type="text" v-model="loginForm.username" class="login-input w-full pl-10 pr-4 py-2.5 rounded-xl text-white placeholder-white/30" placeholder="admin" required>
+                        </div>
+                    </div>
+                    <div class="stagger-3">
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-green-100/70 mb-1.5">Password</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-green-300/60 text-sm"></i>
+                            <input type="password" v-model="loginForm.password" class="login-input w-full pl-10 pr-4 py-2.5 rounded-xl text-white placeholder-white/30" placeholder="••••••••" required>
+                        </div>
+                    </div>
+                    <div v-if="loginForm.error" class="shake text-red-200 text-sm text-center bg-red-500/20 p-2.5 rounded-xl border border-red-400/40">
+                        <i class="fa-solid fa-circle-exclamation mr-1"></i> {{ loginForm.error }}
+                    </div>
+                    <button type="submit" class="btn-glow stagger-4 w-full text-white font-bold py-3 px-4 rounded-xl mt-2">
+                        Sign In <i class="fa-solid fa-arrow-right ml-2 text-sm"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- MAIN APPLICATION -->
+        <div v-else class="flex h-screen overflow-hidden">
+            
+            <!-- SIDEBAR -->
+            <aside class="sidebar w-64 flex flex-col no-print flex-shrink-0">
+                <!-- Header / Logo -->
+                <div class="pt-7 pb-6 flex flex-col items-center sidebar-divider">
+                    <div class="logo-orb logo-orb-sm mb-3">
+                        <i class="fa-solid fa-seedling text-xl text-white"></i>
+                    </div>
+                    <span class="text-sm font-extrabold text-white tracking-[0.2em] uppercase">RUHUNU PRODUCTS</span>
+                    <span class="text-[10px] text-green-300/60 tracking-widest uppercase mt-1">Billing Suite</span>
+                </div>
+                
+                <!-- Nav Links -->
+                <nav class="flex-1 overflow-y-auto py-3 px-3 space-y-1 nav-stagger">
+                    <a href="#" @click.prevent="currentView = 'dashboard'" :class="navItemClass('dashboard')">
+                        <i class="fa-solid fa-chart-line" :class="navIconClass('dashboard')"></i> Dashboard
+                    </a>
+                    <a href="#" @click.prevent="currentView = 'create_invoice'" :class="navItemClass('create_invoice')">
+                        <i class="fa-solid fa-plus-circle" :class="navIconClass('create_invoice')"></i> Create Invoice
+                    </a>
+                    <a href="#" @click.prevent="currentView = 'manage_invoices'" :class="navItemClass('manage_invoices')">
+                        <i class="fa-solid fa-list-check" :class="navIconClass('manage_invoices')"></i> Manage Invoices
+                    </a>
+                    <a href="#" @click.prevent="currentView = 'products'" :class="navItemClass('products')">
+                        <i class="fa-solid fa-box" :class="navIconClass('products')"></i> Products
+                    </a>
+                    <a href="#" @click.prevent="currentView = 'customers'" :class="navItemClass('customers')">
+                        <i class="fa-solid fa-users" :class="navIconClass('customers')"></i> Customers
+                    </a>
+                    <a href="#" @click.prevent="currentView = 'account'; initAccountForm()" :class="navItemClass('account')">
+                        <i class="fa-solid fa-user-cog" :class="navIconClass('account')"></i> My Account
+                    </a>
+                    <div v-if="currentUser && currentUser.role === 'admin'" class="px-3 pt-4 pb-1 text-[10px] font-bold uppercase tracking-widest text-green-300/40">Admin</div>
+                    <a href="#" v-if="currentUser && currentUser.role === 'admin'" @click.prevent="currentView = 'manage_template'" :class="navItemClass('manage_template')">
+                        <i class="fa-solid fa-sliders-h" :class="navIconClass('manage_template')"></i> Manage Template
+                    </a>
+                    <a href="#" v-if="currentUser && currentUser.role === 'admin'" @click.prevent="currentView = 'manage_users'" :class="navItemClass('manage_users')">
+                        <i class="fa-solid fa-users-cog" :class="navIconClass('manage_users')"></i> Manage Users
+                    </a>
+                    <a href="#" v-if="currentUser && currentUser.role === 'admin'" @click.prevent="currentView = 'history'" :class="navItemClass('history')">
+                        <i class="fa-solid fa-clock-rotate-left" :class="navIconClass('history')"></i> History
+                    </a>
+                </nav>
+                
+                <!-- Bottom Sidebar / User + Logout -->
+                <div class="p-3 sidebar-divider-top mt-auto">
+                    <div class="user-chip flex items-center gap-3 p-2.5 rounded-xl">
+                        <div class="avatar">{{ (currentUser?.username || '?').charAt(0).toUpperCase() }}</div>
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm font-semibold text-white truncate">{{ currentUser?.username }}</div>
+                            <div class="text-[10px] uppercase tracking-wider" :class="currentUser?.role === 'admin' ? 'text-purple-300' : 'text-sky-300'">{{ currentUser?.role === 'admin' ? 'Administrator' : 'Standard User' }}</div>
+                        </div>
+                        <button @click="logout" class="logout-btn w-9 h-9 rounded-lg flex items-center justify-center" title="Logout">
+                            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                        </button>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="flex-1 flex flex-col h-screen overflow-hidden">
+                <!-- Top Header -->
+                <header class="app-header h-16 flex items-center justify-between px-6 no-print">
+                    <div class="flex items-center gap-3">
+                        <span class="header-accent"></span>
+                        <h1 :key="currentView" class="title-anim text-xl font-bold text-gray-800 dark:text-white capitalize">
+                            {{ viewTitle || 'Invoice' }}
+                        </h1>
+                    </div>
+                    
+                    <div class="flex items-center gap-3">
+                        <span class="hidden md:inline text-sm text-gray-500 dark:text-gray-400">{{ new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }) }}</span>
+                        <button @click="toggleTheme" class="theme-toggle w-10 h-10 rounded-xl flex items-center justify-center text-gray-500 dark:text-yellow-300 focus:outline-none" title="Toggle Dark/Light Mode">
+                            <i class="fa-solid" :class="settings.theme === 'dark' ? 'fa-sun' : 'fa-moon'"></i>
+                        </button>
+                    </div>
+                </header>
+
+                <!-- Scrollable View Area -->
+                <div class="flex-1 overflow-y-auto p-6 app-content-bg">
+                  <div :key="currentView" class="view-anim">
+                    
+                    <!-- DASHBOARD VIEW -->
+                    <div v-if="currentView === 'dashboard'" class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                            <div class="stat-card card-pop" style="--d: 0ms">
+                                <div class="stat-icon bg-gradient-to-br from-green-400 to-emerald-600"><i class="fa-solid fa-sack-dollar"></i></div>
+                                <div>
+                                    <div class="text-gray-500 dark:text-gray-400 text-xs font-semibold uppercase tracking-wider">Total Revenue</div>
+                                    <div class="text-2xl font-extrabold text-gray-800 dark:text-white mt-1">Rs. {{ formatCurrency(totalRevenue) }}</div>
+                                </div>
+                            </div>
+                            <div class="stat-card card-pop" style="--d: 80ms">
+                                <div class="stat-icon bg-gradient-to-br from-sky-400 to-blue-600"><i class="fa-solid fa-file-invoice"></i></div>
+                                <div>
+                                    <div class="text-gray-500 dark:text-gray-400 text-xs font-semibold uppercase tracking-wider">Total Invoices</div>
+                                    <div class="text-2xl font-extrabold text-gray-800 dark:text-white mt-1">{{ invoices.length }}</div>
+                                </div>
+                            </div>
+                            <div class="stat-card card-pop" style="--d: 160ms">
+                                <div class="stat-icon bg-gradient-to-br from-fuchsia-400 to-purple-600"><i class="fa-solid fa-users"></i></div>
+                                <div>
+                                    <div class="text-gray-500 dark:text-gray-400 text-xs font-semibold uppercase tracking-wider">Customers</div>
+                                    <div class="text-2xl font-extrabold text-gray-800 dark:text-white mt-1">{{ customers.length }}</div>
+                                </div>
+                            </div>
+                            <div class="stat-card card-pop" style="--d: 240ms">
+                                <div class="stat-icon bg-gradient-to-br from-amber-400 to-orange-600"><i class="fa-solid fa-box"></i></div>
+                                <div>
+                                    <div class="text-gray-500 dark:text-gray-400 text-xs font-semibold uppercase tracking-wider">Products</div>
+                                    <div class="text-2xl font-extrabold text-gray-800 dark:text-white mt-1">{{ products.length }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+                            <h2 class="text-lg font-semibold mb-4 text-gray-800 dark:text-white">Recent Invoices</h2>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr class="border-b dark:border-gray-700 text-gray-600 dark:text-gray-400">
+                                            <th class="py-3 px-4">Invoice #</th>
+                                            <th class="py-3 px-4">Date</th>
+                                            <th class="py-3 px-4">Customer</th>
+                                            <th class="py-3 px-4">Total</th>
+                                            <th class="py-3 px-4">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="inv in recentInvoices" :key="inv.id" class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
+                                            <td class="py-3 px-4">{{ inv.invoiceNumber }}</td>
+                                            <td class="py-3 px-4">{{ formatDate(inv.date) }}</td>
+                                            <td class="py-3 px-4">{{ getCustomerName(inv.customerId) }}</td>
+                                            <td class="py-3 px-4">Rs. {{ formatCurrency(inv.total) }}</td>
+                                            <td class="py-3 px-4">
+                                                <span class="px-2 py-1 rounded text-xs" :class="inv.status === 'Paid' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'">
+                                                    {{ inv.status }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        <tr v-if="recentInvoices.length === 0">
+                                            <td colspan="5" class="py-4 text-center text-gray-500">No invoices yet.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CREATE INVOICE VIEW -->
+                    <div v-if="currentView === 'create_invoice'" class="space-y-6 max-w-6xl">
+                        <!-- Custom Header for this view -->
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-2xl font-bold text-green-600 dark:text-green-500 flex items-center tracking-wide">
+                                <i class="fa-solid" :class="editingInvoiceId ? 'fa-pen-to-square' : 'fa-plus-circle'" class="mr-3"></i>
+                                <i :class="editingInvoiceId ? 'fa-solid fa-pen-to-square' : 'fa-solid fa-plus-circle'" class="mr-3"></i>
+                                {{ editingInvoiceId ? 'Edit Invoice' : 'Create New Invoice' }}
+                            </h2>
+                            <button @click="cancelInvoiceEdit" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition flex items-center text-sm font-medium">
+                                <i class="fa-solid fa-arrow-left mr-2"></i> Back to Invoices
+                            </button>
+                        </div>
+
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+                            
+                            <!-- Top Grid: 4 Columns -->
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-5 mb-8">
+                                <!-- Customer -->
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">Customer</label>
+                                    <div class="flex">
+                                        <select v-model="newInvoice.customerId" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-l focus:outline-none focus:ring-1 focus:ring-green-500 dark:bg-gray-900 dark:text-white text-sm transition-colors">
+                                            <option value="">Select Customer...</option>
+                                            <option v-for="c in customers" :value="c.id">{{ c.name }}</option>
+                                        </select>
+                                        <button @click="openCustomerModal()" class="px-3 border border-l-0 border-gray-300 dark:border-gray-600 rounded-r bg-gray-50 dark:bg-gray-700 text-green-600 hover:bg-gray-200 dark:hover:bg-gray-600 transition" title="Add New Customer">
+                                            <i class="fa-solid fa-user-plus"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Invoice Date -->
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">Invoice Date</label>
+                                    <input type="date" v-model="newInvoice.date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-green-500 dark:bg-gray-900 dark:text-white text-sm transition-colors">
+                                </div>
+                                
+                                <!-- Shipping Fee -->
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">Shipping Fee (Rs.)</label>
+                                    <input type="number" min="0" v-model="newInvoice.shippingFee" @input="calculateTotals" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-green-500 dark:bg-gray-900 dark:text-white text-sm transition-colors" placeholder="0.00">
+                                </div>
+                                
+                                <!-- Invoice Numbering Mode -->
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">Invoice Numbering Mode</label>
+                                    <select v-model="settings.invoiceNumberingMode" @change="saveData" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-green-500 dark:bg-gray-900 dark:text-white text-sm transition-colors">
+                                        <option value="auto">Auto-Increment (#{{ Number(settings.autoStartNumber) + invoices.length }})</option>
+                                        <option value="manual">Manual Custom Invoice #</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Second row: conditional fields based on numbering mode -->
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-5 mb-6" v-if="settings.invoiceNumberingMode === 'auto' || settings.invoiceNumberingMode === 'manual'">
+                                <!-- Auto: start number config -->
+                                <div v-if="settings.invoiceNumberingMode === 'auto'">
+                                    <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">Auto-Start Number</label>
+                                    <input type="number" min="1" v-model="settings.autoStartNumber" @change="saveData" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-green-500 dark:bg-gray-900 dark:text-white text-sm transition-colors" placeholder="1">
+                                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Next invoice will be: INV-{{ new Date().getFullYear() }}-{{ (Number(settings.autoStartNumber) + invoices.length).toString().padStart(4, '0') }}</p>
+                                </div>
+                                <!-- Manual: custom invoice number -->
+                                <div v-if="settings.invoiceNumberingMode === 'manual'" class="md:col-span-2">
+                                    <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">Invoice Number <span class="text-red-500">*</span></label>
+                                    <input type="text" v-model="newInvoice.manualInvoiceNumber" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-green-500 dark:bg-gray-900 dark:text-white text-sm transition-colors" placeholder="e.g. INV-2026-0050">
+                                </div>
+                            </div>
+
+                            <!-- Invoice Items Section -->
+                            <div>
+                                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-3 gap-4">
+                                    <h3 class="text-lg font-bold text-green-600 dark:text-green-500 flex items-center shrink-0">
+                                        <i class="fa-solid fa-list-ul mr-2"></i> Invoice Items
+                                    </h3>
+                                    
+                                    <div class="flex flex-wrap items-center gap-6 justify-end bg-gray-50 dark:bg-gray-700/50 p-2.5 rounded-lg border border-gray-200 dark:border-gray-600">
+                                        <div class="flex items-center gap-2">
+                                            <label class="text-sm font-bold text-gray-700 dark:text-gray-300 whitespace-nowrap">Amount Paid:</label>
+                                            <input type="number" min="0" v-model="newInvoice.amountPaid" @input="calculateTotals" class="w-28 px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-green-500 dark:bg-gray-900 dark:text-white text-sm transition-colors" placeholder="0.00">
+                                        </div>
+                                        <div class="text-right">
+                                            <div class="text-lg font-bold text-green-600 dark:text-green-500 tracking-wide">
+                                                Total: Rs. {{ formatCurrency(newInvoice.total) }}
+                                            </div>
+                                            <div class="text-sm font-bold text-red-500 tracking-wide" v-if="newInvoice.balance > 0">
+                                                Balance: Rs. {{ formatCurrency(newInvoice.balance) }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="border border-gray-200 dark:border-gray-700 rounded-md overflow-hidden mb-4">
+                                    <table class="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr class="bg-gray-100 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-xs font-bold">
+                                                <th class="py-2.5 px-4">Product / Description</th>
+                                                <th class="py-2.5 px-4 w-28">Quantity</th>
+                                                <th class="py-2.5 px-4 w-40">Price (Rs.)</th>
+                                                <th class="py-2.5 px-4 w-32 text-right">Total (Rs.)</th>
+                                                <th class="py-2.5 px-4 w-16 text-center">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="(item, index) in newInvoice.items" :key="index" class="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                                                <td class="py-3 px-4">
+                                                    <div class="flex flex-col space-y-2">
+                                                        <select v-model="item.productId" @change="updateItemPrice(index)" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-green-500 dark:bg-gray-900 dark:text-white text-sm transition-colors">
+                                                            <option value="">Custom Item...</option>
+                                                            <option v-for="p in products" :value="p.id">{{ p.name }}</option>
+                                                        </select>
+                                                        <!-- Show description input if it's a custom item or if they want to override the name -->
+                                                        <input type="text" v-model="item.description" v-if="!item.productId" placeholder="Product or service description" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-green-500 dark:bg-gray-900 dark:text-white text-sm transition-colors">
+                                                    </div>
+                                                </td>
+                                                <td class="py-3 px-4 align-top">
+                                                    <input type="number" min="1" v-model="item.qty" @input="calculateTotals" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-green-500 dark:bg-gray-900 dark:text-white text-sm transition-colors text-center font-semibold">
+                                                </td>
+                                                <td class="py-3 px-4 align-top">
+                                                    <input type="number" min="0" v-model="item.price" @input="calculateTotals" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-green-500 dark:bg-gray-900 dark:text-white text-sm transition-colors" placeholder="0.00">
+                                                </td>
+                                                <td class="py-3 px-4 align-top text-right text-green-600 dark:text-green-500 font-bold text-sm pt-5">
+                                                    Rs. {{ formatCurrency(item.qty * item.price) }}
+                                                </td>
+                                                <td class="py-3 px-4 align-top text-center pt-3.5">
+                                                    <button v-if="currentUser?.role === 'admin'" @click="removeInvoiceItem(index)" class="text-red-500 hover:text-white hover:bg-red-600 border border-red-500 dark:border-red-900 dark:hover:border-red-600 p-2 rounded transition shadow-sm">
+                                                        <i class="fa-solid fa-trash text-sm"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <div class="mt-4" v-if="currentUser?.role === 'admin'">
+                                    <button @click="addInvoiceItem" class="px-4 py-2 border border-green-600 text-green-600 dark:text-green-500 rounded hover:bg-green-50 dark:hover:bg-green-900/30 transition text-sm flex items-center font-medium">
+                                        <i class="fa-solid fa-plus mr-2"></i> Add Item Row
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Footer Options -->
+                            <div class="mt-10 flex flex-col sm:flex-row justify-between items-center border-t border-gray-200 dark:border-gray-700 pt-6">
+                                <label class="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer hover:text-green-600 dark:hover:text-green-500 transition mb-4 sm:mb-0">
+                                    <input type="checkbox" v-model="newInvoice.hideBankDetails" class="mr-3 w-5 h-5 text-green-600 rounded focus:ring-green-500 bg-gray-100 border-gray-300 dark:bg-gray-900 dark:border-gray-600 transition">
+                                    Hide Bank / Payment Details on this Invoice
+                                </label>
+                                
+                                <button @click="saveInvoice" class="bg-green-600 hover:bg-green-700 text-white px-8 py-2.5 rounded-lg font-bold transition shadow-md flex items-center" :disabled="!isInvoiceValid" :class="{'opacity-50 cursor-not-allowed': !isInvoiceValid}">
+                                    <i class="fa-solid fa-save mr-2"></i> {{ editingInvoiceId ? 'Update Invoice' : 'Save & View Invoice' }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MANAGE INVOICES VIEW -->
+                    <div v-if="currentView === 'manage_invoices'" class="space-y-4">
+                         <div class="flex justify-between items-center">
+                            <div class="relative w-64">
+                                <input type="text" v-model="searchInvoice" placeholder="Search invoice #..." class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white">
+                                <i class="fa-solid fa-search absolute left-3 top-3 text-gray-400"></i>
+                            </div>
+                        </div>
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400">
+                                        <th class="py-3 px-4 border-b dark:border-gray-700">Invoice #</th>
+                                        <th class="py-3 px-4 border-b dark:border-gray-700">Date</th>
+                                        <th class="py-3 px-4 border-b dark:border-gray-700">Customer</th>
+                                        <th class="py-3 px-4 border-b dark:border-gray-700">Total (Rs.)</th>
+                                        <th class="py-3 px-4 border-b dark:border-gray-700">Status</th>
+                                        <th class="py-3 px-4 border-b dark:border-gray-700">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="inv in filteredInvoices" :key="inv.id" class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
+                                        <td class="py-3 px-4">{{ inv.invoiceNumber }}</td>
+                                        <td class="py-3 px-4">{{ formatDate(inv.date) }}</td>
+                                        <td class="py-3 px-4">{{ getCustomerName(inv.customerId) }}</td>
+                                        <td class="py-3 px-4">{{ formatCurrency(inv.total) }}</td>
+                                        <td class="py-3 px-4">
+                                            <select v-model="inv.status" @change="saveData" class="bg-transparent border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-green-500">
+                                                <option value="Unpaid">Unpaid</option>
+                                                <option value="Paid">Paid</option>
+                                            </select>
+                                        </td>
+                                        <td class="py-3 px-4 space-x-2 whitespace-nowrap">
+                                            <button @click="viewInvoice(inv)" class="text-green-600 hover:text-green-800 dark:text-green-400 inline-flex items-center"><i class="fa-solid fa-eye mr-1"></i> View</button>
+                                            <button @click="editInvoice(inv)" class="text-blue-500 hover:text-blue-700 dark:text-blue-400 inline-flex items-center ml-2"><i class="fa-solid fa-pen-to-square mr-1"></i> Edit</button>
+                                            <button v-if="currentUser?.role === 'admin'" @click="deleteInvoice(inv.id)" class="text-red-500 hover:text-red-700 ml-2"><i class="fa-solid fa-trash"></i></button>
+                                        </td>
+                                    </tr>
+                                    <tr v-if="filteredInvoices.length === 0">
+                                        <td colspan="6" class="py-4 text-center text-gray-500">No invoices found.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- PRODUCTS VIEW -->
+                    <div v-if="currentView === 'products'" class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <div class="relative w-64">
+                                <input type="text" v-model="searchProduct" placeholder="Search products..." class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white">
+                                <i class="fa-solid fa-search absolute left-3 top-3 text-gray-400"></i>
+                            </div>
+                            <button @click="openProductModal()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition flex items-center">
+                                <i class="fa-solid fa-plus mr-2"></i> Add Product
+                            </button>
+                        </div>
+
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400">
+                                        <th class="py-3 px-4 border-b dark:border-gray-700">Code</th>
+                                        <th class="py-3 px-4 border-b dark:border-gray-700">Name</th>
+                                        <th class="py-3 px-4 border-b dark:border-gray-700">Price (Rs.)</th>
+                                        <th class="py-3 px-4 border-b dark:border-gray-700">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="prod in filteredProducts" :key="prod.id" class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
+                                        <td class="py-3 px-4">{{ prod.code }}</td>
+                                        <td class="py-3 px-4">{{ prod.name }}</td>
+                                        <td class="py-3 px-4">{{ formatCurrency(prod.price) }}</td>
+                                        <td class="py-3 px-4 space-x-2">
+                                            <button @click="openProductModal(prod)" class="text-blue-500 hover:text-blue-700"><i class="fa-solid fa-edit"></i></button>
+                                            <button v-if="currentUser?.role === 'admin'" @click="deleteProduct(prod.id)" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
+                                        </td>
+                                    </tr>
+                                    <tr v-if="filteredProducts.length === 0">
+                                        <td colspan="4" class="py-4 text-center text-gray-500">No products found.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- CUSTOMERS VIEW -->
+                    <div v-if="currentView === 'customers'" class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <div class="relative w-64">
+                                <input type="text" v-model="searchCustomer" placeholder="Search customers..." class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white">
+                                <i class="fa-solid fa-search absolute left-3 top-3 text-gray-400"></i>
+                            </div>
+                            <button @click="openCustomerModal()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition flex items-center">
+                                <i class="fa-solid fa-plus mr-2"></i> Add Customer
+                            </button>
+                        </div>
+
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400">
+                                        <th class="py-3 px-4 border-b dark:border-gray-700">Name</th>
+                                        <th class="py-3 px-4 border-b dark:border-gray-700">Phone</th>
+                                        <th class="py-3 px-4 border-b dark:border-gray-700">Address</th>
+                                        <th class="py-3 px-4 border-b dark:border-gray-700">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="cust in filteredCustomers" :key="cust.id" class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
+                                        <td class="py-3 px-4">{{ cust.name }}</td>
+                                        <td class="py-3 px-4">{{ cust.phone }}</td>
+                                        <td class="py-3 px-4 text-gray-500">
+                                            <span v-if="cust.addressLine1">{{ cust.addressLine1 }}</span><br v-if="cust.addressLine1 && cust.addressLine2">
+                                            <span v-if="cust.addressLine2">{{ cust.addressLine2 }}</span>
+                                        </td>
+                                        <td class="py-3 px-4 space-x-2">
+                                            <button @click="openCustomerModal(cust)" class="text-blue-500 hover:text-blue-700"><i class="fa-solid fa-edit"></i></button>
+                                            <button v-if="currentUser?.role === 'admin'" @click="deleteCustomer(cust.id)" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
+                                        </td>
+                                    </tr>
+                                    <tr v-if="filteredCustomers.length === 0">
+                                        <td colspan="4" class="py-4 text-center text-gray-500">No customers found.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- ACCOUNT SETTINGS VIEW -->
+                    <div v-if="currentView === 'account'" class="max-w-3xl space-y-6">
+                        <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+                            <h2 class="text-lg font-semibold mb-4 text-gray-800 dark:text-white">My Account ({{ currentUser?.username }})</h2>
+                            <form @submit.prevent="updateAccount" class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Username</label>
+                                    <input type="text" v-model="accountForm.username" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-900 dark:border-gray-700 dark:text-white" required>
+                                </div>
+                                <div class="pt-4 border-t border-gray-100 dark:border-gray-700 mt-4">
+                                    <h3 class="text-md font-medium text-gray-800 dark:text-white mb-3">Change Password</h3>
+                                    <div class="space-y-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Current Password (Required to save changes)</label>
+                                            <input type="password" v-model="accountForm.currentPassword" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-900 dark:border-gray-700 dark:text-white" required>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">New Password (leave blank to keep current)</label>
+                                            <input type="password" v-model="accountForm.newPassword" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-900 dark:border-gray-700 dark:text-white">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div v-if="accountForm.message" :class="accountForm.message.includes('success') ? 'text-green-600 bg-green-50 dark:bg-green-900/30' : 'text-red-500 bg-red-50 dark:bg-red-900/30'" class="text-sm font-medium p-3 rounded">
+                                    {{ accountForm.message }}
+                                </div>
+                                <div class="pt-4 flex justify-end">
+                                    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition">
+                                        Update Account
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+
+                    <!-- MANAGE TEMPLATE VIEW -->
+                    <div v-if="currentView === 'manage_template'" class="space-y-4">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                            <!-- LEFT: Company Details Form -->
+                            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+                                <h2 class="text-lg font-bold text-green-600 dark:text-green-500 flex items-center mb-5">
+                                    <i class="fa-solid fa-building mr-2"></i> Company Details
+                                </h2>
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">Company Name</label>
+                                        <input type="text" v-model="settings.companyName" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-green-500 dark:bg-gray-900 dark:text-white text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">Address Line 1</label>
+                                        <input type="text" v-model="settings.addressLine1" placeholder="e.g. Main Street, Matara" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-green-500 dark:bg-gray-900 dark:text-white text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">Address Line 2</label>
+                                        <input type="text" v-model="settings.addressLine2" placeholder="e.g. Southern Province, Sri Lanka" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-green-500 dark:bg-gray-900 dark:text-white text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 flex items-center">
+                                            <i class="fa-solid fa-phone text-green-600 dark:text-green-500 mr-1.5"></i> Mobile Number
+                                        </label>
+                                        <input type="text" v-model="settings.mobileNumber" placeholder="+94 41 222 3333" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-green-500 dark:bg-gray-900 dark:text-white text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 flex items-center">
+                                            <i class="fa-brands fa-whatsapp text-green-600 dark:text-green-500 mr-1.5"></i> WhatsApp Number
+                                        </label>
+                                        <input type="text" v-model="settings.whatsappNumber" placeholder="+94 71 234 5678" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-green-500 dark:bg-gray-900 dark:text-white text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">Company Logo URL / Base64</label>
+                                        <input type="text" v-model="settings.logo" placeholder="Paste image URL or Base64 string" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-green-500 dark:bg-gray-900 dark:text-white text-sm">
+                                        <div v-if="settings.logo" class="mt-3">
+                                            <div class="mb-3 p-2 border rounded dark:border-gray-700 inline-block bg-white text-center">
+                                                <img :src="settings.logo" alt="Logo preview" :style="{ height: (settings.logoSize || 60) + 'px' }" class="object-contain">
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 flex justify-between">
+                                                    <span>Logo Size</span>
+                                                    <span class="text-green-600">{{ settings.logoSize || 60 }}px</span>
+                                                </label>
+                                                <input type="range" v-model="settings.logoSize" min="30" max="150" step="5" class="w-full accent-green-600 cursor-pointer">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">Watermark Image URL / Base64</label>
+                                        <input type="text" v-model="settings.watermarkImage" placeholder="Paste watermark image URL or Base64 string" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-green-500 dark:bg-gray-900 dark:text-white text-sm">
+                                        <div v-if="settings.watermarkImage" class="mt-3 space-y-3">
+                                            <div class="mb-1 p-2 border rounded dark:border-gray-700 inline-block bg-white text-center">
+                                                <img :src="settings.watermarkImage" alt="Watermark preview" style="height: 60px;" class="object-contain" :style="{ opacity: settings.watermarkOpacity / 100 }">
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 flex justify-between">
+                                                    <span>Watermark Size</span>
+                                                    <span class="text-green-600">{{ settings.watermarkSize || 50 }}%</span>
+                                                </label>
+                                                <input type="range" v-model="settings.watermarkSize" min="10" max="100" step="1" class="w-full accent-green-600 cursor-pointer">
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 flex justify-between">
+                                                    <span>Watermark Opacity</span>
+                                                    <span class="text-green-600">{{ settings.watermarkOpacity || 10 }}%</span>
+                                                </label>
+                                                <input type="range" v-model="settings.watermarkOpacity" min="1" max="100" step="1" class="w-full accent-green-600 cursor-pointer">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">Header Color</label>
+                                        <input type="color" v-model="settings.headerColor" class="w-full h-10 p-1 border border-gray-300 dark:border-gray-600 rounded cursor-pointer">
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">Logo Position</label>
+                                            <select v-model="settings.logoPosition" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-green-500 dark:bg-gray-900 dark:text-white text-sm">
+                                                <option value="left">Left of Details</option>
+                                                <option value="right">Right of Details</option>
+                                                <option value="top">Above Details</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">Details Alignment</label>
+                                            <select v-model="settings.companyDetailsAlignment" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-green-500 dark:bg-gray-900 dark:text-white text-sm">
+                                                <option value="left">Left</option>
+                                                <option value="center">Center</option>
+                                                <option value="right">Right</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="mt-4">
+                                        <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 flex justify-between">
+                                            <span>Minimum Total Table Rows</span>
+                                            <span class="text-green-600">{{ settings.emptyRowsCount || 0 }}</span>
+                                        </label>
+                                        <input type="range" v-model.number="settings.emptyRowsCount" min="0" max="20" step="1" class="w-full accent-green-600 cursor-pointer">
+                                    </div>
+                                    
+                                    <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                                        <h3 class="text-sm font-bold text-gray-800 dark:text-gray-200 mb-3"><i class="fa-solid fa-arrows-up-down-left-right text-green-600 mr-2"></i>Print Margins (px)</h3>
+                                        <div class="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1 flex justify-between">Top <span>{{ settings.margins?.top || 0 }}</span></label>
+                                                <input type="range" v-model.number="settings.margins.top" min="0" max="100" step="1" class="w-full accent-green-600">
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1 flex justify-between">Bottom <span>{{ settings.margins?.bottom || 0 }}</span></label>
+                                                <input type="range" v-model.number="settings.margins.bottom" min="0" max="100" step="1" class="w-full accent-green-600">
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1 flex justify-between">Left <span>{{ settings.margins?.left || 0 }}</span></label>
+                                                <input type="range" v-model.number="settings.margins.left" min="0" max="100" step="1" class="w-full accent-green-600">
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1 flex justify-between">Right <span>{{ settings.margins?.right || 0 }}</span></label>
+                                                <input type="range" v-model.number="settings.margins.right" min="0" max="100" step="1" class="w-full accent-green-600">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-4">
+                                        <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">Text Area 1 (Notes / Footer)</label>
+                                        <textarea v-model="settings.footerNote" rows="3" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-green-500 dark:bg-gray-900 dark:text-white text-sm"></textarea>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">Text Area 2 (Terms / Info)</label>
+                                        <textarea v-model="settings.termsInfo" rows="3" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-green-500 dark:bg-gray-900 dark:text-white text-sm"></textarea>
+                                    </div>
+                                    <div class="pt-4 flex items-center justify-between border-t border-gray-100 dark:border-gray-700 mt-2">
+                                        <button @click.prevent="openBankModal" class="flex items-center text-sm font-medium bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white px-4 py-2 rounded-lg transition">
+                                            <i class="fa-solid fa-building-columns text-green-600 dark:text-green-500 mr-2"></i> Edit Bank Details
+                                        </button>
+                                        <button @click="saveData" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition">
+                                            Save Template
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- RIGHT: Live Layout Preview -->
+                            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-6 sticky top-4 self-start">
+                                <h2 class="text-base font-semibold text-gray-600 dark:text-gray-300 flex items-center mb-5">
+                                    <i class="fa-solid fa-circle text-green-500 text-xs mr-2 animate-pulse"></i> Live Layout Preview
+                                </h2>
+
+                                <!-- Mini Invoice Preview -->
+                                <div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden text-xs text-gray-800 bg-white dark:bg-gray-900 dark:text-gray-200" style="position: relative;">
+                                    
+                                    <!-- Watermark in Preview -->
+                                    <div v-if="settings.watermarkImage" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 50; mix-blend-mode: multiply;" :style="{ opacity: (settings.watermarkOpacity || 10) / 100, width: (settings.watermarkSize || 50) + '%' }">
+                                        <img :src="settings.watermarkImage" alt="Watermark Preview" style="width: 100%; height: auto; object-fit: contain;">
+                                    </div>
+                                    <!-- Invoice Header -->
+                                    <div class="p-4 flex justify-between items-start bg-white dark:bg-gray-900">
+                                        <div :style="{ display: 'flex', gap: '16px', flexDirection: settings.logoPosition === 'right' ? 'row-reverse' : (settings.logoPosition === 'top' ? 'column' : 'row'), alignItems: settings.logoPosition === 'top' ? (settings.companyDetailsAlignment === 'center' ? 'center' : (settings.companyDetailsAlignment === 'right' ? 'flex-end' : 'flex-start')) : 'center' }">
+                                            <div v-if="settings.logo" class="flex-shrink-0">
+                                                <img :src="settings.logo" alt="Logo" :style="{ height: (settings.logoSize || 60) * 0.6 + 'px', width: (settings.logoSize || 60) * 0.6 + 'px' }" class="object-contain">
+                                            </div>
+                                            <div v-else class="w-10 h-10 rounded flex items-center justify-center flex-shrink-0" :style="{ backgroundColor: settings.headerColor || '#16a34a' }">
+                                                <i class="fa-solid fa-seedling text-white text-lg"></i>
+                                            </div>
+                                            <div :style="{ textAlign: settings.companyDetailsAlignment || 'left', width: settings.logoPosition === 'top' ? '100%' : 'auto' }">
+                                                <p class="font-bold text-sm text-gray-900 dark:text-white uppercase tracking-wide">{{ settings.companyName || 'Company Name' }}</p>
+                                                <p class="text-gray-500 dark:text-gray-400 mt-0.5" v-if="settings.addressLine1">{{ settings.addressLine1 }}</p>
+                                                <p class="text-gray-500 dark:text-gray-400" v-if="settings.addressLine2">{{ settings.addressLine2 }}</p>
+                                                <p class="text-gray-500 dark:text-gray-400 flex items-center mt-0.5" v-if="settings.mobileNumber">
+                                                    <i class="fa-solid fa-phone text-green-600 mr-1 text-xs"></i> {{ settings.mobileNumber }}
+                                                </p>
+                                                <p class="text-gray-500 dark:text-gray-400 flex items-center" v-if="settings.whatsappNumber">
+                                                    <i class="fa-brands fa-whatsapp text-green-600 mr-1 text-xs"></i> {{ settings.whatsappNumber }}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div class="text-right border border-gray-200 dark:border-gray-700 rounded p-2">
+                                            <p class="font-bold text-sm uppercase text-gray-700 dark:text-gray-200 tracking-widest">INVOICE</p>
+                                            <p class="text-gray-500 dark:text-gray-400 mt-0.5">Invoice #: <span class="font-semibold text-gray-800 dark:text-white">#1</span></p>
+                                            <p class="text-gray-500 dark:text-gray-400">Date: <span class="font-semibold text-gray-800 dark:text-white">{{ new Date().toLocaleDateString('en-US', {month:'short', day:'2-digit', year:'numeric'}) }}</span></p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Items Table -->
+                                    <table class="w-full border-t border-gray-200 dark:border-gray-700 text-xs">
+                                        <thead>
+                                            <tr class="bg-gray-100 dark:bg-gray-700/50">
+                                                <th class="py-2 px-3 text-left font-bold text-gray-700 dark:text-gray-300 border-r border-gray-300 dark:border-gray-600">Item Description</th>
+                                                <th class="py-2 px-3 text-center font-bold text-gray-700 dark:text-gray-300 border-r border-gray-300 dark:border-gray-600">Qty</th>
+                                                <th class="py-2 px-3 text-right font-bold text-gray-700 dark:text-gray-300 border-r border-gray-300 dark:border-gray-600">Price</th>
+                                                <th class="py-2 px-3 text-right font-bold text-gray-700 dark:text-gray-300">Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr class="border-t border-gray-200 dark:border-gray-700">
+                                                <td class="py-2 px-3 text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700">Sample Product Item</td>
+                                                <td class="py-2 px-3 text-center text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700">2</td>
+                                                <td class="py-2 px-3 text-right text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700">Rs. 1,500.00</td>
+                                                <td class="py-2 px-3 text-right text-gray-700 dark:text-gray-300">Rs. 3,000.00</td>
+                                            </tr>
+                                            <!-- Blank rows filler -->
+                                            <tr v-for="i in Math.max(0, (settings.emptyRowsCount || 0) - 1)" :key="'blank-'+i" class="border-t border-gray-200 dark:border-gray-700">
+                                                <td class="py-2 px-3 text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700">&nbsp;</td>
+                                                <td class="py-2 px-3 text-center text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700">&nbsp;</td>
+                                                <td class="py-2 px-3 text-right text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700">&nbsp;</td>
+                                                <td class="py-2 px-3 text-right text-gray-700 dark:text-gray-300">&nbsp;</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+
+                                    <!-- Total -->
+                                    <div class="px-3 py-2 text-right border-t border-gray-200 dark:border-gray-700">
+                                        <span class="font-bold text-green-600 dark:text-green-500 text-base">Total: Rs. 3,000.00</span>
+                                    </div>
+
+                                    <!-- Footer Notes Row -->
+                                    <div class="px-3 py-2 border-t border-gray-200 dark:border-gray-700 flex justify-between text-gray-500 dark:text-gray-400">
+                                        <span>{{ settings.footerNote || 'Thank you for your business!' }}</span>
+                                        <span>{{ settings.termsInfo || 'Please make cheques payable to Ruhunu Products.' }}</span>
+                                    </div>
+
+                                    <!-- Bank Details -->
+                                    <div class="m-3 p-3 border border-gray-200 dark:border-gray-700 rounded bg-gray-50 dark:bg-gray-800 inline-block min-w-[250px] max-w-full" v-if="settings.bankDetails?.bankName || settings.bankDetails?.accountNumber">
+                                        <p class="font-bold text-green-600 dark:text-green-500 mb-1 flex items-center">
+                                            <i class="fa-solid fa-building-columns mr-1.5"></i> Bank / Payment Details:
+                                        </p>
+                                        <p v-if="settings.bankDetails?.bankName"><span class="font-semibold">Bank Name:</span> {{ settings.bankDetails.bankName }}</p>
+                                        <p v-if="settings.bankDetails?.accountName"><span class="font-semibold">Account Name:</span> {{ settings.bankDetails.accountName }}</p>
+                                        <p v-if="settings.bankDetails?.accountNumber"><span class="font-semibold">Account Number:</span> {{ settings.bankDetails.accountNumber }}</p>
+                                        <p v-if="settings.bankDetails?.branchName"><span class="font-semibold">Branch:</span> {{ settings.bankDetails.branchName }}</p>
+                                    </div>
+                                    <div class="m-3 p-3 border border-dashed border-gray-200 dark:border-gray-600 rounded text-gray-400 dark:text-gray-500 text-center" v-else>
+                                        <i class="fa-solid fa-building-columns mr-1"></i> Bank details will appear here
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+
+                    <!-- MANAGE USERS VIEW -->
+                    <div v-if="currentView === 'manage_users'" class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <h2 class="text-lg font-semibold text-gray-800 dark:text-white">System Users</h2>
+                            <button @click="openUserModal()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition flex items-center">
+                                <i class="fa-solid fa-plus mr-2"></i> Add User
+                            </button>
+                        </div>
+
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400">
+                                        <th class="py-3 px-4 border-b dark:border-gray-700">Username</th>
+                                        <th class="py-3 px-4 border-b dark:border-gray-700">Role</th>
+                                        <th class="py-3 px-4 border-b dark:border-gray-700">Status</th>
+                                        <th class="py-3 px-4 border-b dark:border-gray-700">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="user in users" :key="user.id" class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
+                                        <td class="py-3 px-4 font-medium">{{ user.username }}</td>
+                                        <td class="py-3 px-4">
+                                            <span class="px-2 py-1 rounded text-xs font-semibold" :class="user.role === 'admin' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'">
+                                                {{ user.role === 'admin' ? 'Admin' : 'User' }}
+                                            </span>
+                                        </td>
+                                        <td class="py-3 px-4">
+                                            <span v-if="currentUser?.id === user.id" class="px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 rounded text-xs">Current Session</span>
+                                            <span v-else class="px-2 py-1 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 rounded text-xs">Active</span>
+                                        </td>
+                                        <td class="py-3 px-4 space-x-2">
+                                            <button @click="openUserModal(user)" class="text-blue-500 hover:text-blue-700"><i class="fa-solid fa-edit"></i></button>
+                                            <button @click="deleteUser(user.id)" v-if="currentUser?.id !== user.id" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- HISTORY VIEW -->
+                    <div v-if="currentView === 'history'" class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <h2 class="text-lg font-semibold text-gray-800 dark:text-white">Activity History</h2>
+                        </div>
+
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400">
+                                        <th class="py-3 px-4 border-b dark:border-gray-700">Date & Time</th>
+                                        <th class="py-3 px-4 border-b dark:border-gray-700">User</th>
+                                        <th class="py-3 px-4 border-b dark:border-gray-700">Action</th>
+                                        <th class="py-3 px-4 border-b dark:border-gray-700 w-1/2">Details</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="item in history" :key="item.id" class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
+                                        <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-500">{{ new Date(item.date).toLocaleString() }}</td>
+                                        <td class="py-3 px-4 font-medium text-sm">{{ item.user }}</td>
+                                        <td class="py-3 px-4">
+                                            <span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300 rounded text-xs font-semibold">{{ item.action }}</span>
+                                        </td>
+                                        <td class="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">{{ item.details }}</td>
+                                    </tr>
+                                    <tr v-if="!history || history.length === 0">
+                                        <td colspan="4" class="py-8 text-center text-gray-500">No activity history found.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- VIEW INVOICE (PRINTABLE TEMPLATE) -->
+                    <div v-if="currentView === 'view_invoice' && viewingInvoice" class="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+                        <div class="mb-4 flex justify-between no-print">
+                            <button @click="currentView = 'manage_invoices'" class="text-gray-500 hover:text-gray-800 dark:hover:text-white">
+                                <i class="fa-solid fa-arrow-left"></i> Back to Invoices
+                            </button>
+                            <button @click="printInvoice" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-medium">
+                                <i class="fa-solid fa-print"></i> Print / Download PDF
+                            </button>
+                        </div>
+
+                        <div id="print-area" class="bg-white text-black w-full max-w-4xl mx-auto dark:bg-white dark:text-black" :style="{ fontFamily: '\'Segoe UI\', Arial, sans-serif', position: 'relative', boxSizing: 'border-box', minHeight: '100vh', display: 'flex', flexDirection: 'column', paddingTop: (settings.margins?.top || 0) + 'px', paddingRight: (settings.margins?.right || 0) + 'px', paddingBottom: (settings.margins?.bottom || 0) + 'px', paddingLeft: (settings.margins?.left || 0) + 'px' }">
+                            
+                            <!-- Watermark -->
+                            <div v-if="settings.watermarkImage" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 50; mix-blend-mode: multiply;" :style="{ opacity: (settings.watermarkOpacity || 10) / 100, width: (settings.watermarkSize || 50) + '%' }">
+                                <img :src="settings.watermarkImage" alt="Watermark" style="width: 100%; height: auto; object-fit: contain;">
+                            </div>
+
+                            <!-- TOP HEADER BAR -->
+                            <div style="background: #ffffff; padding: 0; margin: 0; border-bottom: 2px solid #16a34a;">
+                                <div style="display: flex; justify-content: space-between; align-items: stretch;">
+                                    <!-- Company Info -->
+                                    <div style="padding: 24px 28px; flex: 1;">
+                                        <div :style="{ display: 'flex', gap: '20px', flexDirection: settings.logoPosition === 'right' ? 'row-reverse' : (settings.logoPosition === 'top' ? 'column' : 'row'), alignItems: settings.logoPosition === 'top' ? (settings.companyDetailsAlignment === 'center' ? 'center' : (settings.companyDetailsAlignment === 'right' ? 'flex-end' : 'flex-start')) : 'center' }">
+                                            <img v-if="settings.logo" :src="settings.logo" alt="Logo" :style="{ height: (settings.logoSize || 60) + 'px', width: (settings.logoSize || 60) + 'px', objectFit: 'contain', flexShrink: 0 }">
+                                            <div v-else style="height: 60px; width: 60px; background: #f0fdf4; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                                <i class="fa-solid fa-seedling" style="color: #16a34a; font-size: 24px;"></i>
+                                            </div>
+                                            <div :style="{ textAlign: settings.companyDetailsAlignment || 'left', width: settings.logoPosition === 'top' ? '100%' : 'auto' }">
+                                            <h1 style="color: #111827; font-size: 22px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; margin: 0 0 4px 0;">{{ settings.companyName }}</h1>
+                                            <p style="color: #4b5563; font-size: 12px; margin: 1px 0;" v-if="settings.addressLine1">{{ settings.addressLine1 }}</p>
+                                            <p style="color: #4b5563; font-size: 12px; margin: 1px 0;" v-if="settings.addressLine2">{{ settings.addressLine2 }}</p>
+                                            <p style="color: #4b5563; font-size: 12px; margin: 1px 0 0 0;" v-if="settings.mobileNumber">
+                                                <i class="fa-solid fa-phone" style="font-size: 10px; margin-right: 4px; color: #16a34a;"></i>{{ settings.mobileNumber }}
+                                            </p>
+                                            <p style="color: #4b5563; font-size: 12px; margin: 1px 0 0 0;" v-if="settings.whatsappNumber">
+                                                <i class="fa-brands fa-whatsapp" style="font-size: 10px; margin-right: 4px; color: #16a34a;"></i>{{ settings.whatsappNumber }}
+                                            </p>
+                                        </div>
+                                        </div>
+                                    </div>
+                                    <!-- Invoice Label -->
+                                    <div style="padding: 24px 28px; text-align: right; display: flex; flex-direction: column; justify-content: center; min-width: 200px;">
+                                        <div style="font-size: 32px; font-weight: 900; color: #111827; letter-spacing: 3px; text-transform: uppercase; line-height: 1;">INVOICE</div>
+                                        <div style="margin-top: 10px;">
+                                            <div style="color: #6b7280; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Invoice No.</div>
+                                            <div style="color: #111827; font-size: 15px; font-weight: 700;">{{ viewingInvoice.invoiceNumber }}</div>
+                                        </div>
+                                        <div style="margin-top: 6px;">
+                                            <div style="color: #6b7280; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Date</div>
+                                            <div style="color: #111827; font-size: 13px; font-weight: 600;">{{ formatDate(viewingInvoice.date) }}</div>
+                                        </div>
+                                        <div style="margin-top: 6px;">
+                                            <div style="color: #6b7280; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Status</div>
+                                            <div style="font-size: 13px; font-weight: 700; padding: 2px 10px; border-radius: 12px; display: inline-block; margin-top: 2px;"
+                                                :style="viewingInvoice.status === 'Paid' ? 'background:#dcfce7; color:#166534;' : 'background:#fef9c3; color:#854d0e;'">
+                                                {{ viewingInvoice.status }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- BILL TO + DIVIDER -->
+                            <div style="display: flex; gap: 0; border-bottom: 2px solid #e5e7eb; background: #f9fafb;">
+                                <div style="padding: 16px 28px; flex: 1;">
+                                    <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #9ca3af; margin-bottom: 6px;">Bill To</div>
+                                    <div v-if="getCustomer(viewingInvoice.customerId)" style="border: 1px solid #d1d5db; border-radius: 10px; padding: 14px 18px; background: #ffffff; display: inline-block; min-width: 300px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+                                        <div style="font-size: 16px; font-weight: 700; color: #111827;">{{ getCustomer(viewingInvoice.customerId).name }}</div>
+                                        <div style="font-size: 12px; color: #6b7280; margin-top: 3px;" v-if="getCustomer(viewingInvoice.customerId).addressLine1">
+                                            {{ getCustomer(viewingInvoice.customerId).addressLine1 }}
+                                        </div>
+                                        <div style="font-size: 12px; color: #6b7280; margin-top: 1px;" v-if="getCustomer(viewingInvoice.customerId).addressLine2">
+                                            {{ getCustomer(viewingInvoice.customerId).addressLine2 }}
+                                        </div>
+                                        <div style="font-size: 12px; color: #6b7280; margin-top: 5px;" v-if="getCustomer(viewingInvoice.customerId).phone">
+                                            <i class="fa-solid fa-phone" style="font-size: 10px; margin-right: 4px; color:#16a34a;"></i>{{ getCustomer(viewingInvoice.customerId).phone }}
+                                        </div>
+                                    </div>
+                                    <div v-else style="border: 1px dashed #d1d5db; border-radius: 10px; padding: 14px 18px; background: #ffffff; display: inline-block; min-width: 300px; color: #9ca3af; font-style: italic; font-size: 13px;">No customer selected</div>
+                                </div>
+                            </div>
+
+                            <!-- ITEMS TABLE -->
+                            <div style="padding: 0 0 0 0;">
+                                <table style="width: 100%; border-collapse: collapse;">
+                                    <thead>
+                                        <tr style="background: #1f2937; color: white;">
+                                            <th style="padding: 12px 20px; text-align: left; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; width: 50%; border-right: 1px solid #374151;">#&nbsp;&nbsp; Description</th>
+                                            <th style="padding: 12px 16px; text-align: center; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; border-right: 1px solid #374151;">Qty</th>
+                                            <th style="padding: 12px 16px; text-align: right; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; border-right: 1px solid #374151;">Unit Price</th>
+                                            <th style="padding: 12px 20px; text-align: right; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="(item, idx) in viewingInvoice.items" :key="idx"
+                                            :style="idx % 2 === 0 ? 'background: #ffffff;' : 'background: #f0fdf4;'">
+                                            <td style="padding: 13px 20px; font-size: 13px; color: #111827; border-bottom: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;">
+                                                <span style="color: #9ca3af; font-size: 11px; margin-right: 10px;">{{ idx + 1 }}</span>
+                                                <strong>{{ item.description || getProductName(item.productId) }}</strong>
+                                            </td>
+                                            <td style="padding: 13px 16px; text-align: center; font-size: 13px; color: #374151; font-weight: 600; border-bottom: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;">{{ item.qty }}</td>
+                                            <td style="padding: 13px 16px; text-align: right; font-size: 13px; color: #374151; border-bottom: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;">Rs. {{ formatCurrency(item.price) }}</td>
+                                            <td style="padding: 13px 20px; text-align: right; font-size: 13px; font-weight: 700; color: #111827; border-bottom: 1px solid #e5e7eb;">Rs. {{ formatCurrency(item.qty * item.price) }}</td>
+                                        </tr>
+                                        <!-- Blank rows filler -->
+                                        <tr v-for="i in Math.max(0, (settings.emptyRowsCount || 0) - (viewingInvoice.items?.length || 0))" :key="'blank-'+i"
+                                            :style="(viewingInvoice.items.length + i - 1) % 2 === 0 ? 'background: #ffffff;' : 'background: #f0fdf4;'">
+                                            <td style="padding: 13px 20px; border-bottom: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;">&nbsp;</td>
+                                            <td style="padding: 13px 16px; border-bottom: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;">&nbsp;</td>
+                                            <td style="padding: 13px 16px; border-bottom: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;">&nbsp;</td>
+                                            <td style="padding: 13px 20px; border-bottom: 1px solid #e5e7eb;">&nbsp;</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+
+                            <!-- TOTALS SECTION -->
+                            <div style="display: flex; justify-content: flex-end; background: #f9fafb; border-top: 2px solid #e5e7eb;">
+                                <div style="width: 300px; padding: 16px 20px;">
+                                    <div style="display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; color: #6b7280; border-bottom: 1px solid #e5e7eb;">
+                                        <span>Subtotal</span>
+                                        <span>Rs. {{ formatCurrency(viewingInvoice.subtotal) }}</span>
+                                    </div>
+                                    <div v-if="viewingInvoice.taxRate > 0" style="display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; color: #6b7280; border-bottom: 1px solid #e5e7eb;">
+                                        <span>Tax ({{ viewingInvoice.taxRate }}%)</span>
+                                        <span>Rs. {{ formatCurrency((viewingInvoice.subtotal * viewingInvoice.taxRate) / 100) }}</span>
+                                    </div>
+                                    <div v-if="viewingInvoice.shippingFee > 0" style="display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; color: #6b7280; border-bottom: 1px solid #e5e7eb;">
+                                        <span>Shipping Fee</span>
+                                        <span>Rs. {{ formatCurrency(viewingInvoice.shippingFee) }}</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; padding: 10px 0 4px 0; border-top: 2px solid #16a34a; margin-top: 4px;">
+                                        <span style="font-size: 16px; font-weight: 800; color: #111827;">TOTAL</span>
+                                        <span style="font-size: 18px; font-weight: 900; color: #16a34a;">Rs. {{ formatCurrency(viewingInvoice.total) }}</span>
+                                    </div>
+                                    <div v-if="viewingInvoice.amountPaid > 0" style="display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; color: #6b7280; border-bottom: 1px solid #e5e7eb; margin-top: 4px;">
+                                        <span>Amount Paid</span>
+                                        <span>Rs. {{ formatCurrency(viewingInvoice.amountPaid) }}</span>
+                                    </div>
+                                    <div v-if="viewingInvoice.balance > 0" style="display: flex; justify-content: space-between; padding: 10px 0 4px 0; margin-top: 4px;">
+                                        <span style="font-size: 14px; font-weight: 700; color: #ef4444;">BALANCE DUE</span>
+                                        <span style="font-size: 16px; font-weight: 800; color: #ef4444;">Rs. {{ formatCurrency(viewingInvoice.balance) }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- FOOTER: Notes + Bank Details -->
+                            <div style="padding: 20px 28px; background: #fff; flex: 1; display: flex; flex-direction: column;">
+                                <!-- Notes Row -->
+                                <div v-if="settings.footerNote || settings.termsInfo" style="display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 16px; border-bottom: 1px solid #e5e7eb; font-size: 12px; color: #6b7280; gap: 20px;">
+                                    <span>{{ settings.footerNote }}</span>
+                                    <span style="text-align: right;">{{ settings.termsInfo }}</span>
+                                </div>
+
+                                <div :style="{ marginTop: 'auto', textAlign: settings.bankDetails?.position || 'left' }">
+                                <!-- Bank Details Box -->
+                                <div v-if="!viewingInvoice.hideBankDetails && (settings.bankDetails?.bankName || settings.bankDetails?.accountNumber)"
+                                    style="text-align: left; margin-top: 16px; border: 1.5px solid #d1fae5; border-radius: 8px; overflow: hidden; display: inline-block; min-width: 350px; max-width: 100%;">
+                                    <div style="background: #dcfce7; padding: 8px 16px; display: flex; align-items: center; gap: 8px;">
+                                        <i class="fa-solid fa-building-columns" style="color: #16a34a; font-size: 14px;"></i>
+                                        <span style="font-size: 13px; font-weight: 700; color: #166534; text-transform: uppercase; letter-spacing: 0.5px;">Bank & Payment Details</span>
+                                    </div>
+                                    <div style="padding: 12px 16px; display: flex; flex-direction: column; gap: 6px;">
+                                        <div v-if="settings.bankDetails?.bankName" style="font-size: 12px; color: #374151;">
+                                            <span style="font-weight: 600; color: #111827;">Bank Name: </span>{{ settings.bankDetails.bankName }}
+                                        </div>
+                                        <div v-if="settings.bankDetails?.accountName" style="font-size: 12px; color: #374151;">
+                                            <span style="font-weight: 600; color: #111827;">Account Name: </span>{{ settings.bankDetails.accountName }}
+                                        </div>
+                                        <div v-if="settings.bankDetails?.accountNumber" style="font-size: 12px; color: #374151;">
+                                            <span style="font-weight: 600; color: #111827;">Account No: </span>{{ settings.bankDetails.accountNumber }}
+                                        </div>
+                                        <div v-if="settings.bankDetails?.branchName" style="font-size: 12px; color: #374151;">
+                                            <span style="font-weight: 600; color: #111827;">Branch: </span>{{ settings.bankDetails.branchName }}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Bottom stamp line -->
+                                <div style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #d1d5db; padding-top: 12px; page-break-inside: avoid;">
+                                    <span style="font-size: 11px; color: #6b7280; font-style: italic;">Generated by {{ settings.companyName }}</span>
+                                    <span style="font-size: 11px; color: #6b7280;">{{ viewingInvoice.invoiceNumber }}</span>
+                                </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                  </div>
+                </div>
+            </main>
+
+            <!-- Modals -->
+            
+            <!-- Bank Details Modal matching screenshot exactly -->
+            <div v-if="modals.bank" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+                <div class="bg-[#0f150f] border border-[#1a261a] rounded-lg w-full max-w-lg shadow-2xl overflow-hidden font-sans">
+                    <!-- Modal Header -->
+                    <div class="flex justify-between items-center px-6 py-4 border-b border-[#1a261a]">
+                        <h2 class="text-lg font-bold text-[#00ff00] flex items-center">
+                            <i class="fa-solid fa-building-columns mr-3 text-xl"></i> Edit Bank & Payment Details
+                        </h2>
+                        <button @click="closeModals" class="text-gray-400 hover:text-white transition">
+                            <i class="fa-solid fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Modal Body -->
+                    <div class="p-6 space-y-5">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-300 mb-2 tracking-wide">Bank Name</label>
+                            <input type="text" v-model="settings.bankDetails.bankName" class="w-full px-4 py-2.5 bg-[#0a0f0a] border border-[#1a261a] rounded focus:outline-none focus:border-[#00ff00] text-gray-200 transition-colors" placeholder="Bank of Ceylon (BOC)">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-300 mb-2 tracking-wide">Account Name</label>
+                            <input type="text" v-model="settings.bankDetails.accountName" class="w-full px-4 py-2.5 bg-[#0a0f0a] border border-[#1a261a] rounded focus:outline-none focus:border-[#00ff00] text-gray-200 transition-colors" placeholder="Ruhunu Products">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-300 mb-2 tracking-wide">Account Number</label>
+                            <input type="text" v-model="settings.bankDetails.accountNumber" class="w-full px-4 py-2.5 bg-[#0a0f0a] border border-[#1a261a] rounded focus:outline-none focus:border-[#00ff00] text-gray-200 transition-colors" placeholder="1234567890">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-300 mb-2 tracking-wide">Branch Name</label>
+                            <input type="text" v-model="settings.bankDetails.branchName" class="w-full px-4 py-2.5 bg-[#0a0f0a] border border-[#1a261a] rounded focus:outline-none focus:border-[#00ff00] text-gray-200 transition-colors" placeholder="Matara Main Branch">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-300 mb-2 tracking-wide">Position on Invoice</label>
+                            <select v-model="settings.bankDetails.position" class="w-full px-4 py-2.5 bg-[#0a0f0a] border border-[#1a261a] rounded focus:outline-none focus:border-[#00ff00] text-gray-200 transition-colors">
+                                <option value="left">Left</option>
+                                <option value="center">Center</option>
+                                <option value="right">Right</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Modal Footer -->
+                    <div class="px-6 py-4 border-t border-[#1a261a] flex justify-end space-x-3 bg-[#0a0f0a]/50">
+                        <button @click="closeModals" class="px-5 py-2.5 bg-[#768087] hover:bg-gray-500 text-white font-medium rounded transition">
+                            Cancel
+                        </button>
+                        <button @click="saveData(); closeModals()" class="px-5 py-2.5 bg-[#00ff00] hover:bg-[#00cc00] text-black font-bold rounded transition shadow-[0_0_10px_rgba(0,255,0,0.2)]">
+                            Save Bank Details
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Modal -->
+            <div v-if="modals.user" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md shadow-xl">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">{{ editingItem ? 'Edit User' : 'Add New User' }}</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1 dark:text-gray-300">Username</label>
+                            <input type="text" v-model="formData.user.username" class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1 dark:text-gray-300">Password</label>
+                            <input type="password" v-model="formData.user.password" class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1 dark:text-gray-300">Role</label>
+                            <select v-model="formData.user.role" class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                <option value="user">User (Standard)</option>
+                                <option value="admin">Admin (Full Access)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex justify-end space-x-3">
+                        <button @click="closeModals" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">Cancel</button>
+                        <button @click="saveUser" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Save</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Product Modal -->
+            <div v-if="modals.product" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md shadow-xl">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">{{ editingItem ? 'Edit Product' : 'Add Product' }}</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1 dark:text-gray-300">Product Code</label>
+                            <input type="text" v-model="formData.product.code" class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1 dark:text-gray-300">Name</label>
+                            <input type="text" v-model="formData.product.name" class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1 dark:text-gray-300">Price (Rs.)</label>
+                            <input type="number" v-model="formData.product.price" class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        </div>
+                    </div>
+                    <div class="mt-6 flex justify-end space-x-3">
+                        <button @click="closeModals" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">Cancel</button>
+                        <button @click="saveProduct" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Save</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customer Modal -->
+            <div v-if="modals.customer" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md shadow-xl">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">{{ editingItem ? 'Edit Customer' : 'Add Customer' }}</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1 dark:text-gray-300">Name</label>
+                            <input type="text" v-model="formData.customer.name" class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1 dark:text-gray-300">Phone</label>
+                            <input type="text" v-model="formData.customer.phone" class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1 dark:text-gray-300">Address Line 1</label>
+                            <input type="text" v-model="formData.customer.addressLine1" class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Street Address">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1 dark:text-gray-300">Address Line 2</label>
+                            <input type="text" v-model="formData.customer.addressLine2" class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="City, Province">
+                        </div>
+                    </div>
+                    <div class="mt-6 flex justify-end space-x-3">
+                        <button @click="closeModals" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">Cancel</button>
+                        <button @click="saveCustomer" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Save</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- App Logic -->
+    <script src="app.js"></script>
+</body>
+</html>
