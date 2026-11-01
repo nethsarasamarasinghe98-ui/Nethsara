@@ -154,6 +154,20 @@
                     </div>
                     
                     <div class="flex items-center gap-3">
+                        <!-- Database Live Status Indicator -->
+                        <div v-if="isSaving" class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 rounded-full text-xs font-semibold">
+                            <i class="fa-solid fa-arrows-rotate fa-spin text-xs"></i>
+                            <span>Saving to DB...</span>
+                        </div>
+                        <div v-else-if="dbConnected" class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 rounded-full text-xs font-semibold" title="Direct instant sync to database.sqlite">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span>DB Synced</span>
+                        </div>
+                        <div v-else class="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 rounded-full text-xs font-semibold" title="Server offline - saving to local browser storage">
+                            <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                            <span>Local Cache</span>
+                        </div>
+
                         <span class="hidden md:inline text-sm text-gray-500 dark:text-gray-400">{{ new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }) }}</span>
                         <button @click="toggleTheme" class="theme-toggle w-10 h-10 rounded-xl flex items-center justify-center text-gray-500 dark:text-yellow-300 focus:outline-none" title="Toggle Dark/Light Mode">
                             <i class="fa-solid" :class="settings.theme === 'dark' ? 'fa-sun' : 'fa-moon'"></i>

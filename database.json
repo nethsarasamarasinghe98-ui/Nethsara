@@ -1,0 +1,164 @@
+{
+  "users": [
+    {
+      "id": "usr_admin_001",
+      "username": "admin",
+      "password": "password",
+      "role": "admin"
+    },
+    {
+      "id": "usr_user_002",
+      "username": "user",
+      "password": "password",
+      "role": "user"
+    }
+  ],
+  "settings": {
+    "companyName": "RUHUNU PRODUCTS",
+    "logo": "logo.png",
+    "address": "",
+    "addressLine1": "Main Street, Matara",
+    "addressLine2": "Southern Province, Sri Lanka",
+    "phone": "",
+    "mobileNumber": "+94 41 222 3333",
+    "whatsappNumber": "+94 71 234 5678",
+    "email": "info@ruhunupurchases.com",
+    "footerNote": "Thank you for your business!",
+    "termsInfo": "Please make cheques payable to Ruhunu Products.",
+    "bankDetails": {
+      "bankName": "Bank of Ceylon (BOC)",
+      "accountName": "Ruhunu Products",
+      "accountNumber": "0012345678",
+      "branchName": "Matara City Branch",
+      "position": "left"
+    },
+    "theme": "light",
+    "headerColor": "#16a34a",
+    "logoSize": 60,
+    "watermarkImage": "",
+    "watermarkSize": 50,
+    "watermarkOpacity": 10,
+    "logoPosition": "left",
+    "companyDetailsAlignment": "left",
+    "emptyRowsCount": 4,
+    "margins": {
+      "top": 0,
+      "right": 20,
+      "bottom": 20,
+      "left": 20
+    },
+    "invoiceNumberingMode": "auto",
+    "autoStartNumber": 1
+  },
+  "products": [
+    {
+      "id": "prod_004",
+      "code": "RP-BP100",
+      "name": "Ruhunu Black Pepper Powder 100g",
+      "price": 320
+    },
+    {
+      "id": "prod_001",
+      "code": "RP-CP100",
+      "name": "Ruhunu Chilli Powder 100g",
+      "price": 180
+    },
+    {
+      "id": "prod_002",
+      "code": "RP-CR100",
+      "name": "Ruhunu Curry Powder 100g",
+      "price": 190
+    },
+    {
+      "id": "prod_005",
+      "code": "RP-RD500",
+      "name": "Ruhunu Roasted Rice Flour 500g",
+      "price": 220
+    },
+    {
+      "id": "prod_003",
+      "code": "RP-TP050",
+      "name": "Ruhunu Turmeric Powder 50g",
+      "price": 150
+    }
+  ],
+  "customers": [
+    {
+      "id": "cust_001",
+      "name": "Perera Super Center",
+      "phone": "+94 77 123 4567",
+      "email": "pererastores@gmail.com",
+      "addressLine1": "No. 45, Galle Road",
+      "addressLine2": "Matara"
+    },
+    {
+      "id": "cust_003",
+      "name": "Ruhunu Traders",
+      "phone": "+94 41 555 7890",
+      "email": "ruhunu.traders@outlook.com",
+      "addressLine1": "Kandy Road",
+      "addressLine2": "Akuressa"
+    },
+    {
+      "id": "cust_002",
+      "name": "Southern Grocery Mart",
+      "phone": "+94 71 987 6543",
+      "email": "southerngrocery@gmail.com",
+      "addressLine1": "Station Road",
+      "addressLine2": "Weligama"
+    }
+  ],
+  "invoices": [
+    {
+      "id": "inv_001",
+      "invoiceNumber": "INV-2026-0001",
+      "customerId": "cust_001",
+      "date": "2026-11-02",
+      "shippingFee": 150,
+      "hideBankDetails": false,
+      "subtotal": 7000,
+      "taxRate": 0,
+      "total": 7150,
+      "amountPaid": 7150,
+      "balance": 0,
+      "status": "Paid",
+      "manualInvoiceNumber": "",
+      "items": [
+        {
+          "productId": "prod_001",
+          "description": "Ruhunu Chilli Powder 100g",
+          "qty": 20,
+          "price": 180
+        },
+        {
+          "productId": "prod_002",
+          "description": "Ruhunu Curry Powder 100g",
+          "qty": 10,
+          "price": 190
+        },
+        {
+          "productId": "prod_004",
+          "description": "Ruhunu Black Pepper Powder 100g",
+          "qty": 5,
+          "price": 320
+        }
+      ]
+    }
+  ],
+  "history": [
+    {
+      "id": "act_002",
+      "action": "Create Invoice",
+      "details": "Created new invoice: INV-2026-0001",
+      "user": "admin",
+      "date": "2026-11-02 01:30:00"
+    },
+    {
+      "id": "act_001",
+      "action": "System Init",
+      "details": "System database initialized successfully",
+      "user": "System",
+      "date": "2026-11-02 01:00:00"
+    }
+  ]
+}

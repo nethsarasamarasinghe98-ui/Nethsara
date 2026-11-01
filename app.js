@@ -2,9 +2,16 @@ const { createApp } = Vue;
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
+// Use relative URL on any live web hosting / domain (HTTP/HTTPS); fallback to localhost:3000 only when opened as file:///
+const API_URL = (typeof window !== 'undefined' && window.location.protocol.startsWith('http'))
+    ? ''
+    : 'http://localhost:3000';
+
 createApp({
     data() {
         return {
+            dbConnected: false,
+            isSaving: false,
             isLoggedIn: false,
             currentUser: null,
             users: [],
@@ -197,11 +204,10 @@ createApp({
         },
 
         // Init & Save
-        loadData() {
+        loadFromLocalStorage() {
             const storedUsers = localStorage.getItem('rp_users');
             if (storedUsers) {
                 let parsedUsers = JSON.parse(storedUsers);
-                // Migrate old users missing a role
                 let migrated = false;
                 parsedUsers.forEach(u => {
                     if (!u.role) {
@@ -209,34 +215,21 @@ createApp({
                         migrated = true;
                     }
                 });
-                // Ensure a default 'user' account exists
                 if (!parsedUsers.find(u => u.username === 'user')) {
                     parsedUsers.push({ id: generateId(), username: 'user', password: 'password', role: 'user' });
                     migrated = true;
                 }
                 this.users = parsedUsers;
-                if (migrated) this.saveData();
             } else {
                 this.users = [
                     { id: generateId(), username: 'admin', password: 'password', role: 'admin' },
                     { id: generateId(), username: 'user', password: 'password', role: 'user' }
                 ];
-                localStorage.setItem('rp_users', JSON.stringify(this.users));
-            }
-
-            const sessionId = localStorage.getItem('rp_session_id');
-            if (sessionId) {
-                const user = this.users.find(u => u.id === sessionId);
-                if (user) {
-                    this.currentUser = user;
-                    this.isLoggedIn = true;
-                }
             }
 
             const storedSettings = localStorage.getItem('rp_settings');
             if (storedSettings) {
                 const parsedSettings = JSON.parse(storedSettings);
-                // Backward compatibility for bankDetails string to object conversion
                 if (typeof parsedSettings.bankDetails === 'string' || !parsedSettings.bankDetails) {
                     parsedSettings.bankDetails = { bankName: '', accountName: '', accountNumber: '', branchName: '', position: 'left' };
                 } else if (!parsedSettings.bankDetails.position) {
@@ -256,16 +249,103 @@ createApp({
             
             const storedHistory = localStorage.getItem('rp_history');
             if (storedHistory) this.history = JSON.parse(storedHistory);
-            
-            this.applyTheme();
         },
-        saveData() {
+        saveToLocalStorage() {
             localStorage.setItem('rp_users', JSON.stringify(this.users));
             localStorage.setItem('rp_settings', JSON.stringify(this.settings));
             localStorage.setItem('rp_products', JSON.stringify(this.products));
             localStorage.setItem('rp_customers', JSON.stringify(this.customers));
             localStorage.setItem('rp_invoices', JSON.stringify(this.invoices));
             localStorage.setItem('rp_history', JSON.stringify(this.history));
+        },
+        async apiRequest(path, options = {}) {
+            try {
+                const url = `${API_URL}${path}`;
+                let res = await fetch(url, options);
+                if (res.ok) return res;
+
+                // Fallback for live PHP hosts without rewrite rules
+                if ((res.status === 404 || !res.ok) && path.startsWith('/api/')) {
+                    const route = path.replace('/api/', '');
+                    const fallbackUrl = `${API_URL}/api.php?route=${encodeURIComponent(route)}`;
+                    const fallbackRes = await fetch(fallbackUrl, options);
+                    if (fallbackRes.ok) return fallbackRes;
+                }
+                return res;
+            } catch (err) {
+                if (path.startsWith('/api/')) {
+                    const route = path.replace('/api/', '');
+                    try {
+                        const fallbackUrl = `${API_URL}/api.php?route=${encodeURIComponent(route)}`;
+                        return await fetch(fallbackUrl, options);
+                    } catch (e) {}
+                }
+                throw err;
+            }
+        },
+        async loadData() {
+            // 1. Initial quick load from local cache
+            this.loadFromLocalStorage();
+
+            // 2. Fetch fresh real-time data from database
+            try {
+                const res = await this.apiRequest('/api/data');
+                if (res && res.ok) {
+                    const data = await res.json();
+                    if (data.users && data.users.length > 0) this.users = data.users;
+                    if (data.settings) this.settings = { ...this.settings, ...data.settings };
+                    if (data.products) this.products = data.products;
+                    if (data.customers) this.customers = data.customers;
+                    if (data.invoices) this.invoices = data.invoices;
+                    if (data.history) this.history = data.history;
+                    this.dbConnected = true;
+                    this.saveToLocalStorage();
+                } else {
+                    this.dbConnected = false;
+                }
+            } catch (e) {
+                this.dbConnected = false;
+            }
+
+            // Restore user session if valid
+            const sessionId = localStorage.getItem('rp_session_id');
+            if (sessionId) {
+                const user = this.users.find(u => u.id === sessionId);
+                if (user) {
+                    this.currentUser = user;
+                    this.isLoggedIn = true;
+                }
+            }
+            
+            this.applyTheme();
+        },
+        async saveData() {
+            this.saveToLocalStorage();
+            this.isSaving = true;
+            try {
+                const payload = {
+                    users: this.users,
+                    settings: this.settings,
+                    products: this.products,
+                    customers: this.customers,
+                    invoices: this.invoices,
+                    history: this.history
+                };
+                const res = await this.apiRequest('/api/sync', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (res && res.ok) {
+                    this.dbConnected = true;
+                } else {
+                    this.dbConnected = false;
+                }
+            } catch (err) {
+                this.dbConnected = false;
+            } finally {
+                setTimeout(() => { this.isSaving = false; }, 300);
+            }
         },
         logHistory(action, details) {
             this.history.unshift({
